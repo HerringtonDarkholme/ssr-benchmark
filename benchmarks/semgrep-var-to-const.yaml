@@ -1,0 +1,7 @@
+rules:
+  - id: var-to-const
+    pattern: var $X = $Y;
+    fix: const $X = $Y;
+    message: "Convert var to const"
+    languages: [javascript, typescript]
+    severity: INFO

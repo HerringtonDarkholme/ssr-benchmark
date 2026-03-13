@@ -1,0 +1,11 @@
+rules:
+  - id: async-trycatch
+    pattern: |
+      async function $F(...) {
+        ...
+        try { ... } catch ($E) { ... }
+        ...
+      }
+    message: "async function with try/catch"
+    languages: [javascript, typescript]
+    severity: INFO

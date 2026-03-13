@@ -1,0 +1,6 @@
+rules:
+  - id: console-log
+    pattern: console.log(...)
+    message: "Found console.log"
+    languages: [javascript, typescript]
+    severity: INFO
