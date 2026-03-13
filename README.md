@@ -1,5 +1,7 @@
 # How Fast Is Your Code Search Tool? A Benchmark of Five AST Tools
 
+![AST Tool Benchmark Results](benchmark.png)
+
 Every codebase has patterns you need to find. Maybe it's leftover `console.log` calls before a release. Maybe you need to rename a variable across hundreds of files. Or find every function that handles errors a certain way.
 
 You could use find-and-replace — but that only matches text. It doesn't understand code. A text search for `log` will match variable names, comments, and URLs. What you really want is a tool that understands the *structure* of your code — one that knows the difference between a function call and a variable name.
