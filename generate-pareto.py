@@ -1,117 +1,117 @@
 #!/usr/bin/env python3
-"""Generate a bubble chart: x=time, y=tool, bubble size=log(memory), shape=task."""
+"""Generate a radar chart comparing AST tools across 6 dimensions."""
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import numpy as np
 
 # ── Data ─────────────────────────────────────────────────────────
 tools = ['ast-grep', 'GritQL', 'recast', 'jscodeshift', 'semgrep']
 colors = ['#3b82f6', '#22c55e', '#a855f7', '#f59e0b', '#ef4444']
+fill_alphas = [0.25, 0.12, 0.12, 0.12, 0.12]
 
-tasks = ['Search', 'Transform', 'Complex Search']
-task_markers = ['o', 's', 'D']
-
-# (time_ms, memory_mb) per tool per task
-data = {
-    'Search':         [(43,11), (80,58), (200,93), (754,153), (7535,250)],
-    'Transform':      [(41,10), (816,57), (200,95), (808,157), (13111,327)],
-    'Complex Search': [(44,11), (1486,58), (199,95), (764,154), (1433,231)],
+# Raw values (lower = better for all)
+raw = {
+    'Search Speed':          [43, 80, 200, 754, 7535],
+    'Transform Speed':       [41, 816, 200, 808, 13111],
+    'Complex Search Speed':  [44, 1486, 199, 764, 1433],
+    'Search Memory':         [11, 58, 93, 153, 250],
+    'Transform Memory':      [10, 57, 95, 157, 327],
+    'Complex Search Memory': [11, 58, 95, 154, 231],
 }
+
+dimensions = list(raw.keys())
+n_dims = len(dimensions)
+
+# Normalize: invert so that higher = better, scale 0-1
+# Use log scale for speed dimensions to avoid one tool dominating
+normalized = {}
+for dim in dimensions:
+    vals = np.array(raw[dim], dtype=float)
+    log_vals = np.log10(vals)
+    worst = log_vals.max()
+    best = log_vals.min()
+    if worst == best:
+        normalized[dim] = [1.0] * len(vals)
+    else:
+        # Invert: best (lowest) gets 1.0, worst (highest) gets ~0.1
+        normalized[dim] = [0.1 + 0.9 * (worst - v) / (worst - best) for v in log_vals]
 
 # ── Style ─────────────────────────────────────────────────────────
 bg_color = '#0f172a'
 card_color = '#1e293b'
 text_color = '#e2e8f0'
-grid_color = '#334155'
+grid_color = '#475569'
 accent_color = '#94a3b8'
 
-fig, ax = plt.subplots(figsize=(14, 7), facecolor=bg_color)
-ax.set_facecolor(card_color)
+fig = plt.figure(figsize=(10, 10), facecolor=bg_color)
+ax = fig.add_subplot(111, polar=True, facecolor=card_color)
 
-# Log-scale bubble size: map log(memory) to point area
-def mem_to_size(mb):
-    return (np.log10(mb) / np.log10(400)) * 1200 + 60
+# ── Radar angles ─────────────────────────────────────────────────
+angles = np.linspace(0, 2 * np.pi, n_dims, endpoint=False).tolist()
+angles += angles[:1]  # close the polygon
 
-n_tools = len(tools)
-y_pos = np.arange(n_tools)
+# ── Plot each tool ───────────────────────────────────────────────
+for i, tool in enumerate(tools):
+    values = [normalized[dim][i] for dim in dimensions]
+    values += values[:1]  # close
 
-# Vertical offsets so 3 task shapes don't overlap per tool row
-task_offsets = [-0.22, 0.0, 0.22]
+    ax.plot(angles, values, color=colors[i], linewidth=2.5,
+            linestyle='-', label=tool, zorder=3 + i)
+    ax.fill(angles, values, color=colors[i], alpha=fill_alphas[i], zorder=2 + i)
 
-for j, task in enumerate(tasks):
-    pts = data[task]
-    for i, (t, m) in enumerate(pts):
-        s = mem_to_size(m)
-        y = i + task_offsets[j]
-        ax.scatter(t, y, s=s, color=colors[i], alpha=0.8,
-                   marker=task_markers[j], edgecolors='white',
-                   linewidths=1.2, zorder=4)
+    # Mark vertices
+    ax.scatter(angles[:-1], values[:-1], color=colors[i], s=50,
+               edgecolors='white', linewidths=1, zorder=5 + i)
 
-# Tool labels on y-axis
-ax.set_yticks(y_pos)
-ax.set_yticklabels(tools, fontsize=14, fontweight='bold',
-                   color=text_color, fontfamily='sans-serif')
-ax.set_ylim(-0.5, n_tools - 0.5)
-ax.invert_yaxis()
+# ── Axis labels ──────────────────────────────────────────────────
+# Shorter labels for readability
+short_labels = [
+    'Search\nSpeed',
+    'Transform\nSpeed',
+    'Complex Search\nSpeed',
+    'Search\nMemory',
+    'Transform\nMemory',
+    'Complex Search\nMemory',
+]
 
-ax.set_xscale('log')
-ax.set_xlim(25, 20000)
-ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{int(x):,}'))
-ax.tick_params(axis='x', colors=accent_color, labelsize=11)
-ax.tick_params(axis='y', length=0)
+ax.set_xticks(angles[:-1])
+ax.set_xticklabels(short_labels, fontsize=12, color=text_color,
+                   fontfamily='sans-serif', fontweight='bold')
 
-ax.set_xlabel('Time (ms, log scale) — faster is better', fontsize=13,
-              color=text_color, fontfamily='sans-serif', labelpad=10)
+# Adjust label padding
+ax.tick_params(axis='x', pad=18)
 
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
-ax.spines['bottom'].set_color(grid_color)
-ax.spines['left'].set_visible(False)
-ax.grid(axis='x', color=grid_color, linewidth=0.5, alpha=0.5, zorder=0)
+# ── Grid styling ─────────────────────────────────────────────────
+ax.set_ylim(0, 1.05)
+ax.set_yticks([0.25, 0.5, 0.75, 1.0])
+ax.set_yticklabels(['', '', '', ''], color=accent_color)
+ax.yaxis.grid(True, color=grid_color, linewidth=0.5, alpha=0.6)
+ax.xaxis.grid(True, color=grid_color, linewidth=0.5, alpha=0.6)
+
+# Spines
+ax.spines['polar'].set_color(grid_color)
+ax.spines['polar'].set_linewidth(0.5)
+
+# ── Ring labels (inside) ─────────────────────────────────────────
+for val, label in [(0.25, 'Poor'), (0.5, ''), (0.75, 'Good'), (1.0, 'Best')]:
+    ax.text(np.pi / n_dims, val + 0.02, label, fontsize=9, color=accent_color,
+            fontfamily='sans-serif', ha='center', va='bottom', alpha=0.7)
+
+# ── Legend ────────────────────────────────────────────────────────
+leg = ax.legend(loc='upper right', bbox_to_anchor=(1.28, 1.1),
+                fontsize=13, frameon=True, facecolor=card_color,
+                edgecolor=grid_color, labelcolor=text_color,
+                borderpad=1, handlelength=2, handletextpad=0.8)
 
 # ── Title ────────────────────────────────────────────────────────
-fig.text(0.5, 0.97, 'AST Tool Benchmark: Speed & Memory', ha='center', va='top',
-         fontsize=24, fontweight='bold', color=text_color, fontfamily='sans-serif')
-fig.text(0.5, 0.935, 'Bubble size = peak memory (log scale). Shape = task type.',
-         ha='center', va='top', fontsize=13, color=accent_color, fontfamily='sans-serif')
+fig.text(0.5, 0.97, 'AST Tool Benchmark', ha='center', va='top',
+         fontsize=26, fontweight='bold', color=text_color,
+         fontfamily='sans-serif')
+fig.text(0.5, 0.935, 'Higher = faster speed & lower memory. 6 dimensions, log-normalized.',
+         ha='center', va='top', fontsize=13, color=accent_color,
+         fontfamily='sans-serif')
 
-# ── Legend: task shapes ──────────────────────────────────────────
-for j, (task, mk) in enumerate(zip(tasks, task_markers)):
-    lx = 0.75 + j * 0.09
-    ax.scatter([], [], marker=mk, s=100, color=accent_color,
-               edgecolors='white', linewidths=1, label=task)
-
-leg = ax.legend(loc='lower right', fontsize=12, frameon=True,
-                facecolor=card_color, edgecolor=grid_color,
-                labelcolor=text_color, borderpad=0.8,
-                handletextpad=0.5, columnspacing=1.5, ncol=3)
-
-# ── Bubble size legend ───────────────────────────────────────────
-legend_mems = [10, 50, 150, 300]
-bx_start = 0.13
-for k, mem in enumerate(legend_mems):
-    bx = bx_start + k * 0.065
-    s = mem_to_size(mem)
-    ax.scatter(32, -0.5 + k * 0, s=0, color='none')  # dummy
-    fig.text(bx, 0.06, f'{mem}', ha='center', fontsize=10,
-             color=accent_color, fontfamily='sans-serif')
-
-# Draw bubble legend manually in axes coords
-ax2 = fig.add_axes([0.1, 0.01, 0.3, 0.05], facecolor='none')
-ax2.set_xlim(0, 10)
-ax2.set_ylim(0, 1)
-ax2.axis('off')
-for k, mem in enumerate(legend_mems):
-    s = mem_to_size(mem)
-    ax2.scatter(1 + k * 2.2, 0.5, s=s * 0.5, color=accent_color, alpha=0.4,
-                edgecolors='white', linewidths=0.8)
-    ax2.text(1 + k * 2.2, -0.3, f'{mem} MB', ha='center', fontsize=9,
-             color=accent_color, fontfamily='sans-serif')
-ax2.text(-0.5, 0.5, 'Size:', ha='right', va='center', fontsize=10,
-         color=accent_color, fontfamily='sans-serif', fontweight='bold')
-
-fig.subplots_adjust(left=0.1, right=0.96, top=0.89, bottom=0.13)
+fig.subplots_adjust(left=0.08, right=0.78, top=0.88, bottom=0.05)
 
 fig.savefig('benchmark-pareto.png', dpi=200,
-            facecolor=bg_color, bbox_inches='tight', pad_inches=0.3)
+            facecolor=bg_color, bbox_inches='tight', pad_inches=0.5)
 print('Saved benchmark-pareto.png')

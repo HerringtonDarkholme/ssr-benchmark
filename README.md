@@ -97,17 +97,19 @@ The pattern is more complex, but ast-grep doesn't slow down. 44 ms — essential
 
 ## The Big Picture: Speed & Memory
 
-![Speed & Memory Bubble Chart](benchmark-pareto.png)
+![Radar Chart](benchmark-pareto.png)
 
-This chart shows all three tasks on a single view. Each tool gets a row. **Position** shows execution time (further left is faster), **bubble size** shows peak memory (smaller is lighter, log-scaled), and **shape** indicates the task type — circle for search, square for transform, diamond for complex search.
+This radar chart plots each tool across six dimensions — speed and memory for each of the three tasks. Values are log-normalized so that **higher is better**: closer to the outer ring means faster execution and lower memory usage.
 
 A few things jump out:
 
-**ast-grep's three shapes are clustered in a tight group on the far left.** It's both the fastest and the lightest tool on every single task. Its bubbles are the smallest on the chart.
+**ast-grep's blue polygon fills nearly the entire chart.** It reaches the outer ring on every single axis — speed and memory alike. No other tool comes close to that coverage.
 
-**The other tools spread out.** GritQL's search dot sits close to ast-grep, but its transform and complex search shapes drift far to the right. Semgrep's shapes are scattered across the far-right edge of the chart — each one larger and slower.
+**semgrep's red polygon is a small ring at the center.** It scores near the bottom on every dimension, reflecting both its slower speed and higher memory consumption.
 
-**ast-grep doesn't shift between tasks.** Whether it's a simple search, a file rewrite, or a complex structural pattern, all three shapes overlap in the same spot. The other tools visibly spread out as the task gets harder.
+**GritQL (green) shows an interesting shape.** It stretches outward on search speed and memory — competitive with ast-grep there — but collapses inward on transform speed, revealing where its query engine adds overhead.
+
+**recast and jscodeshift form mid-sized polygons.** recast (purple) is surprisingly round and consistent. jscodeshift (orange) tracks a similar shape but slightly smaller, reflecting the worker process overhead it adds on top of recast.
 
 ## Why Is ast-grep So Fast?
 
