@@ -99,15 +99,15 @@ The pattern is more complex, but ast-grep doesn't slow down. 44 ms — essential
 
 ![Speed & Memory Bubble Chart](benchmark-pareto.png)
 
-This chart encodes two dimensions at once: **position** shows execution time (further left is faster), and **bubble size** shows peak memory usage (smaller is lighter). Each row is one tool, each panel is one task.
+This chart shows all three tasks on a single view. Each tool gets a row. **Position** shows execution time (further left is faster), **bubble size** shows peak memory (smaller is lighter, log-scaled), and **shape** indicates the task type — circle for search, square for transform, diamond for complex search.
 
 A few things jump out:
 
-**ast-grep is a tiny dot on the far left of every row.** It's both the fastest and the lightest tool on every single task — no contest. Its bubble barely registers compared to the others.
+**ast-grep's three shapes are clustered in a tight group on the far left.** It's both the fastest and the lightest tool on every single task. Its bubbles are the smallest on the chart.
 
-**The gap is visual, not just numerical.** Look at semgrep's bubble in the Transform panel: it's a massive circle pushed all the way to the right. ast-grep's dot is a speck on the opposite end. That's the difference between 41ms and 13 seconds, between 10 MB and 327 MB.
+**The other tools spread out.** GritQL's search dot sits close to ast-grep, but its transform and complex search shapes drift far to the right. Semgrep's shapes are scattered across the far-right edge of the chart — each one larger and slower.
 
-**ast-grep's position doesn't shift between tasks.** Whether it's a simple search, a file rewrite, or a complex structural pattern, its dot stays in the same spot — tiny and far left. The other tools visibly drift rightward as the task gets harder.
+**ast-grep doesn't shift between tasks.** Whether it's a simple search, a file rewrite, or a complex structural pattern, all three shapes overlap in the same spot. The other tools visibly spread out as the task gets harder.
 
 ## Why Is ast-grep So Fast?
 
