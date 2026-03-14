@@ -95,6 +95,22 @@ A harder pattern: find functions marked `async` that contain a `try/catch` block
 
 The pattern is more complex, but ast-grep doesn't slow down. 44 ms — essentially the same speed as the simple search. The other tools take noticeably longer as the query gets harder.
 
+## The Big Picture: Speed vs Memory
+
+![Speed vs Memory: Pareto View](benchmark-pareto.png)
+
+This chart plots every individual result — each point is one tool running one task. The axes are inverted so that **top-right is best**: faster time and lower memory.
+
+A few things jump out:
+
+**ast-grep is alone in the top-right corner.** Its three points are tightly clustered — it's both the fastest and the lightest on every single task. No other tool comes close to that corner of the chart.
+
+**Most tools spread out as tasks get harder.** Look at GritQL's dashed line: its simple search point (circle) sits near ast-grep, but its transform and complex search points trail far to the left. The same is true for semgrep, whose points stretch across the bottom of the chart.
+
+**ast-grep's cluster is tiny.** All three of its points sit in essentially the same spot — 41-44ms, 10-11MB — regardless of whether the task is a simple search, a file rewrite, or a complex structural pattern. That consistency is remarkable.
+
+In Pareto optimization terms, ast-grep **dominates** every other tool: there is no task where another tool is both faster *and* lighter. It sits on the Pareto frontier alone.
+
 ## Why Is ast-grep So Fast?
 
 Without getting too deep into the technical weeds:
