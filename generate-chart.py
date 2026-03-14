@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Generate a beautiful benchmark comparison chart."""
+import os
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
@@ -187,6 +188,6 @@ for i, (bullet, color, text) in enumerate(takeaways):
                      fontfamily='sans-serif', va='center')
 
 # ── Save ──────────────────────────────────────────────────────────
-fig.savefig('benchmark.png', dpi=200,
+fig.savefig(os.path.join(os.path.dirname(__file__), 'benchmark.png'), dpi=200,
             facecolor=bg_color, bbox_inches='tight', pad_inches=0.4)
 print('Saved benchmark.png')

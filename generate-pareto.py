@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Generate a radar chart comparing AST tools across 6 dimensions."""
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -112,6 +113,6 @@ fig.text(0.5, 0.935, 'Higher = faster speed & lower memory. 6 dimensions, log-no
 
 fig.subplots_adjust(left=0.08, right=0.78, top=0.88, bottom=0.05)
 
-fig.savefig('benchmark-pareto.png', dpi=200,
+fig.savefig(os.path.join(os.path.dirname(__file__), 'benchmark-pareto.png'), dpi=200,
             facecolor=bg_color, bbox_inches='tight', pad_inches=0.5)
 print('Saved benchmark-pareto.png')
